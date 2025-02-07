@@ -3,26 +3,23 @@ let tasks = {
     notTodo: []
 };
 
-// Analytics 초기화
-const analytics = firebase.analytics();
-
 // 페이지 로드시 데이터 불러오기
 window.onload = function() {
     loadTasks();
     // 페이지 방문 이벤트 기록
-    analytics.logEvent('page_view');
+    window.analytics.logEvent('page_view');
 };
 
 // Firebase에서 데이터 불러오기
 async function loadTasks() {
     try {
-        const todoSnapshot = await db.collection('tasks')
+        const todoSnapshot = await window.db.collection('tasks')
             .doc('public')
             .collection('todo')
             .orderBy('createdAt', 'desc')
             .get();
             
-        const notTodoSnapshot = await db.collection('tasks')
+        const notTodoSnapshot = await window.db.collection('tasks')
             .doc('public')
             .collection('notTodo')
             .orderBy('createdAt', 'desc')
@@ -41,7 +38,7 @@ async function loadTasks() {
         renderTasks();
     } catch (error) {
         console.error("Error loading tasks: ", error);
-        analytics.logEvent('error_loading_tasks', {
+        window.analytics.logEvent('error_loading_tasks', {
             error_message: error.message
         });
     }
@@ -62,7 +59,7 @@ async function addTask() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            const collectionRef = db.collection('tasks')
+            const collectionRef = window.db.collection('tasks')
                 .doc('public')
                 .collection(type === 'todo' ? 'todo' : 'notTodo');
 
@@ -76,7 +73,7 @@ async function addTask() {
             }
             
             // 할일 추가 이벤트 기록
-            analytics.logEvent('task_added', {
+            window.analytics.logEvent('task_added', {
                 task_type: type
             });
             
@@ -84,7 +81,7 @@ async function addTask() {
             input.value = '';
         } catch (error) {
             console.error("Error adding task: ", error);
-            analytics.logEvent('error_adding_task', {
+            window.analytics.logEvent('error_adding_task', {
                 error_message: error.message
             });
         }
@@ -94,7 +91,7 @@ async function addTask() {
 // 할일 삭제 함수
 async function deleteTask(id, type) {
     try {
-        await db.collection('tasks')
+        await window.db.collection('tasks')
             .doc('public')
             .collection(type === 'todo' ? 'todo' : 'notTodo')
             .doc(id)
@@ -107,14 +104,14 @@ async function deleteTask(id, type) {
         }
 
         // 할일 삭제 이벤트 기록
-        analytics.logEvent('task_deleted', {
+        window.analytics.logEvent('task_deleted', {
             task_type: type
         });
 
         renderTasks();
     } catch (error) {
         console.error("Error deleting task: ", error);
-        analytics.logEvent('error_deleting_task', {
+        window.analytics.logEvent('error_deleting_task', {
             error_message: error.message
         });
     }
@@ -127,7 +124,7 @@ async function toggleTask(id, type) {
         const task = taskList.find(t => t.id === id);
         const newStatus = !task.completed;
 
-        await db.collection('tasks')
+        await window.db.collection('tasks')
             .doc('public')
             .collection(type === 'todo' ? 'todo' : 'notTodo')
             .doc(id)
@@ -138,7 +135,7 @@ async function toggleTask(id, type) {
         task.completed = newStatus;
 
         // 할일 상태 변경 이벤트 기록
-        analytics.logEvent('task_toggled', {
+        window.analytics.logEvent('task_toggled', {
             task_type: type,
             new_status: newStatus
         });
@@ -146,7 +143,7 @@ async function toggleTask(id, type) {
         renderTasks();
     } catch (error) {
         console.error("Error toggling task: ", error);
-        analytics.logEvent('error_toggling_task', {
+        window.analytics.logEvent('error_toggling_task', {
             error_message: error.message
         });
     }
