@@ -37,8 +37,26 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
     
-    <!-- Firebase 설정 -->
-    <script src="firebase-config.js"></script>
+    <!-- Firebase 초기화 -->
+    <script>
+        // Firebase 구성 객체
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGLVYbCQhq8KX2NjtFD7GvLZvi5LwwYDI",
+            authDomain: "practice-d7bcb.firebaseapp.com",
+            projectId: "practice-d7bcb",
+            storageBucket: "practice-d7bcb.firebasestorage.app",
+            messagingSenderId: "1039746137264",
+            appId: "1:1039746137264:web:712cebbed549fd3a1acf75",
+            measurementId: "G-QY045V4E1Z"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+
+        // Firestore 데이터베이스와 Analytics 참조 생성
+        window.db = firebase.firestore();
+        window.analytics = firebase.analytics();
+    </script>
     
     <!-- 앱 로직 -->
     <script src="script.js"></script>
