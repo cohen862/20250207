@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>할일 관리 앱</title>
+    <title>할1 관리 앱</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
                 <option value="todo">할일</option>
                 <option value="not-todo">하지 말아야 할 일</option>
             </select>
-            <button onclick="addTask()">추가</button>
+            <button onclick="app.addTask()">추가</button>
         </div>
 
         <div class="task-lists">
@@ -33,9 +33,9 @@
     </div>
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-analytics-compat.js"></script>
     
     <!-- Firebase 초기화 -->
     <script>
@@ -52,10 +52,6 @@
 
         // Firebase 초기화
         firebase.initializeApp(firebaseConfig);
-
-        // Firestore 데이터베이스와 Analytics 참조 생성
-        window.db = firebase.firestore();
-        window.analytics = firebase.analytics();
     </script>
     
     <!-- 앱 로직 -->
