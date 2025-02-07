@@ -1,75 +1,155 @@
-// 할일과 하지 말아야 할 일 목록을 저장할 배열
 let tasks = {
-    todo: JSON.parse(localStorage.getItem('todo-tasks')) || [],
-    notTodo: JSON.parse(localStorage.getItem('not-todo-tasks')) || []
+    todo: [],
+    notTodo: []
 };
 
-// 페이지 로드시 저장된 목록 불러오기
+// Analytics 초기화
+const analytics = firebase.analytics();
+
+// 페이지 로드시 데이터 불러오기
 window.onload = function() {
-    renderTasks();
+    loadTasks();
+    // 페이지 방문 이벤트 기록
+    analytics.logEvent('page_view');
 };
+
+// Firebase에서 데이터 불러오기
+async function loadTasks() {
+    try {
+        const todoSnapshot = await db.collection('tasks')
+            .doc('public')
+            .collection('todo')
+            .orderBy('createdAt', 'desc')
+            .get();
+            
+        const notTodoSnapshot = await db.collection('tasks')
+            .doc('public')
+            .collection('notTodo')
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        tasks.todo = todoSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        
+        tasks.notTodo = notTodoSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        
+        renderTasks();
+    } catch (error) {
+        console.error("Error loading tasks: ", error);
+        analytics.logEvent('error_loading_tasks', {
+            error_message: error.message
+        });
+    }
+}
 
 // 할일 추가 함수
-function addTask() {
+async function addTask() {
     const input = document.getElementById('taskInput');
     const typeSelect = document.getElementById('taskType');
     const task = input.value.trim();
     const type = typeSelect.value;
     
     if (task) {
-        const newTask = {
-            id: Date.now(),
-            text: task,
-            completed: false
-        };
+        try {
+            const newTask = {
+                text: task,
+                completed: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-        if (type === 'todo') {
-            tasks.todo.push(newTask);
-        } else {
-            tasks.notTodo.push(newTask);
+            const collectionRef = db.collection('tasks')
+                .doc('public')
+                .collection(type === 'todo' ? 'todo' : 'notTodo');
+
+            const docRef = await collectionRef.add(newTask);
+            newTask.id = docRef.id;
+
+            if (type === 'todo') {
+                tasks.todo.unshift(newTask);
+            } else {
+                tasks.notTodo.unshift(newTask);
+            }
+            
+            // 할일 추가 이벤트 기록
+            analytics.logEvent('task_added', {
+                task_type: type
+            });
+            
+            renderTasks();
+            input.value = '';
+        } catch (error) {
+            console.error("Error adding task: ", error);
+            analytics.logEvent('error_adding_task', {
+                error_message: error.message
+            });
         }
-        
-        saveTasks();
-        renderTasks();
-        input.value = '';
     }
 }
 
 // 할일 삭제 함수
-function deleteTask(id, type) {
-    if (type === 'todo') {
-        tasks.todo = tasks.todo.filter(task => task.id !== id);
-    } else {
-        tasks.notTodo = tasks.notTodo.filter(task => task.id !== id);
+async function deleteTask(id, type) {
+    try {
+        await db.collection('tasks')
+            .doc('public')
+            .collection(type === 'todo' ? 'todo' : 'notTodo')
+            .doc(id)
+            .delete();
+
+        if (type === 'todo') {
+            tasks.todo = tasks.todo.filter(task => task.id !== id);
+        } else {
+            tasks.notTodo = tasks.notTodo.filter(task => task.id !== id);
+        }
+
+        // 할일 삭제 이벤트 기록
+        analytics.logEvent('task_deleted', {
+            task_type: type
+        });
+
+        renderTasks();
+    } catch (error) {
+        console.error("Error deleting task: ", error);
+        analytics.logEvent('error_deleting_task', {
+            error_message: error.message
+        });
     }
-    saveTasks();
-    renderTasks();
 }
 
 // 할일 완료 상태 토글 함수
-function toggleTask(id, type) {
-    const taskList = type === 'todo' ? tasks.todo : tasks.notTodo;
-    const updatedTasks = taskList.map(task => {
-        if (task.id === id) {
-            return { ...task, completed: !task.completed };
-        }
-        return task;
-    });
+async function toggleTask(id, type) {
+    try {
+        const taskList = type === 'todo' ? tasks.todo : tasks.notTodo;
+        const task = taskList.find(t => t.id === id);
+        const newStatus = !task.completed;
 
-    if (type === 'todo') {
-        tasks.todo = updatedTasks;
-    } else {
-        tasks.notTodo = updatedTasks;
+        await db.collection('tasks')
+            .doc('public')
+            .collection(type === 'todo' ? 'todo' : 'notTodo')
+            .doc(id)
+            .update({
+                completed: newStatus
+            });
+
+        task.completed = newStatus;
+
+        // 할일 상태 변경 이벤트 기록
+        analytics.logEvent('task_toggled', {
+            task_type: type,
+            new_status: newStatus
+        });
+
+        renderTasks();
+    } catch (error) {
+        console.error("Error toggling task: ", error);
+        analytics.logEvent('error_toggling_task', {
+            error_message: error.message
+        });
     }
-    
-    saveTasks();
-    renderTasks();
-}
-
-// 할일 목록 저장 함수
-function saveTasks() {
-    localStorage.setItem('todo-tasks', JSON.stringify(tasks.todo));
-    localStorage.setItem('not-todo-tasks', JSON.stringify(tasks.notTodo));
 }
 
 // 할일 목록 렌더링 함수
@@ -80,13 +160,11 @@ function renderTasks() {
     todoList.innerHTML = '';
     notTodoList.innerHTML = '';
     
-    // 할일 목록 렌더링
     tasks.todo.forEach(task => {
         const li = createTaskElement(task, 'todo');
         todoList.appendChild(li);
     });
 
-    // 하지 말아야 할 일 목록 렌더링
     tasks.notTodo.forEach(task => {
         const li = createTaskElement(task, 'not-todo');
         notTodoList.appendChild(li);
@@ -99,10 +177,10 @@ function createTaskElement(task, type) {
     li.className = task.completed ? 'completed' : '';
     
     li.innerHTML = `
-        <span onclick="toggleTask(${task.id}, '${type}')" style="cursor: pointer">
+        <span onclick="toggleTask('${task.id}', '${type}')" style="cursor: pointer">
             ${task.text}
         </span>
-        <button onclick="deleteTask(${task.id}, '${type}')" class="delete-btn">삭제</button>
+        <button onclick="deleteTask('${task.id}', '${type}')" class="delete-btn">삭제</button>
     `;
     
     return li;
