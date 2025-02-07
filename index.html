@@ -22,20 +22,25 @@
         <div class="task-lists">
             <div class="todo-list">
                 <h2>할일 목록</h2>
-                <ul id="todoList">
-                    <!-- 할일 목록이 여기에 추가됩니다 -->
-                </ul>
+                <ul id="todoList"></ul>
             </div>
 
             <div class="not-todo-list">
                 <h2>하지 말아야 할 일</h2>
-                <ul id="notTodoList">
-                    <!-- 하지 말아야 할 일 목록이 여기에 추가됩니다 -->
-                </ul>
+                <ul id="notTodoList"></ul>
             </div>
         </div>
     </div>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Firebase 설정 -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- 앱 로직 -->
     <script src="script.js"></script>
 </body>
 </html>
